@@ -4,7 +4,6 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 using System.IO;
-using System.Threading;
 using Microsoft.Extensions.Configuration;
 
 
@@ -267,12 +266,6 @@ namespace DNWS
                 _instance = new DotNetWebServer(parent);
             }
             return _instance;
-        }
-
-        public void ThreadProc(Object stateinfo)
-        {
-            TaskInfo ti = stateinfo as TaskInfo;
-            ti.hp.Process();
         }
 
         /// <summary>
