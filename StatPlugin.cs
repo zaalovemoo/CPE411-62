@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,12 +7,12 @@ namespace DNWS
 {
   class StatPlugin : IPlugin
   {
-    protected static Dictionary<String, int> statDictionary = null;
+    protected static ConcurrentDictionary<String, int> statDictionary = null;
     public StatPlugin()
     {
       if (statDictionary == null)
       {
-        statDictionary = new Dictionary<String, int>();
+        statDictionary = new ConcurrentDictionary<String, int>();
 
       }
     }

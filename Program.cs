@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.IO;
 using Microsoft.Extensions.Configuration;
+using System.Threading;
 
 
 namespace DNWS
@@ -271,6 +272,18 @@ namespace DNWS
         /// <summary>
         /// Server starting point
         /// </summary>
+
+        public enum runType {
+            Single,
+            Multi,
+            Pool
+
+        }
+
+        public void handleThreadPool(Object state){
+            TaskInfo taskInfo = new TaskInfo(state as HTTPProcessor);
+            taskInfo.hp.Process();
+        }
         public void Start()
         {
             _port = Convert.ToInt32(Program.Configuration["Port"]);
@@ -278,8 +291,16 @@ namespace DNWS
             // Create listening socket, queue size is 5 now.
             serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             serverSocket.Bind(localEndPoint);
-            serverSocket.Listen(5);
+            serverSocket.Listen(20);
             _parent.Log("Server started at port " + _port + ".");
+            //Set runtype
+            runType _runType = runType.Multi;
+            //The maximum number of worker threads in the thread pool.
+            int workerThreads = 20;
+            //The maximum number of asynchronous I/O threads in the thread pool.
+            int completionPortThreads = 20;
+            //Set MaxThreads in ThreadPool
+            ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
             while (true)
             {
                 try
@@ -289,7 +310,22 @@ namespace DNWS
                     // Get one, show some info
                     _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
                     HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
-                    hp.Process();
+                    //Runtype is Multi
+                    if(_runType == runType.Multi){
+                        //Handle process with Multi-thread
+                        Thread thread = new Thread(new ThreadStart(hp.Process));
+                        thread.Start();
+
+                    //Runtype is Pool
+                    }else if(_runType == runType.Pool){
+                        //Handle process with Threadpool
+                        ThreadPool.QueueUserWorkItem(handleThreadPool,hp);
+
+                    //Runtype is Single  
+                    }else if(_runType == runType.Single){
+                        //Handle process with Single-thread
+                        hp.Process();
+                    } 
                 }
                 catch (Exception ex)
                 {
